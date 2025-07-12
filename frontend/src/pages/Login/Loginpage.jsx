@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../Store/auth.store.js';
 import { Mail, Lock, Copy, UserPlus, Shield } from 'lucide-react';
-import loginImage from './meetImage.avif'; // Adjust path as needed
+import loginImage from './stackit.jpg'; // Adjust path as needed
 
 function Loginpage() {
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ function Loginpage() {
     e.preventDefault();
     try {
       await login({ email: formData.email, password: formData.password });
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       // Error handling is managed by the store's toast notifications
       console.log(error)
@@ -45,9 +45,9 @@ function Loginpage() {
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-text-primary font-heading mb-2">
-                Sign In to Research Portal
+                Log in
               </h2>
-              <p className="text-text-secondary font-body">Where drug discovery meets technology</p>
+              {/* <p className="text-text-secondary font-body">Where drug discovery meets technology</p> */}
             </div>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
@@ -57,7 +57,7 @@ function Loginpage() {
                     htmlFor="email"
                     className="block text-sm font-medium text-text-primary font-label mb-2"
                   >
-                    Researcher Email
+                    Email
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -71,7 +71,7 @@ function Loginpage() {
                       className="block w-full pl-10 pr-3 py-3 border border-secondary bg-primary text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent font-body"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="you@research.institution"
+                      placeholder="you@gmail.com"
                     />
                   </div>
                 </div>
@@ -131,12 +131,12 @@ function Loginpage() {
                     Authenticating...
                   </>
                 ) : (
-                  'Access Research Portal'
+                  'Enter'
                 )}
               </button>
 
               <div className="text-center flex justify-center gap-4 text-sm font-body">
-                <span className="text-text-secondary">New researcher? </span>
+                <span className="text-text-secondary">New User? </span>
                 <Link
                   to="/signup"
                   className="font-medium text-accent hover:text-accent/80 flex items-center justify-center gap-1"
@@ -148,10 +148,10 @@ function Loginpage() {
             </form>
 
             <div className="mt-8 border-t border-primary pt-6">
-              <h3 className="text-sm font-medium text-text-secondary font-body mb-4">
+              {/* <h3 className="text-sm font-medium text-text-secondary font-body mb-4">
                 Use below test credentials for testing
-              </h3>
-              <div className="space-y-3">
+              </h3> */}
+              {/* <div className="space-y-3">
                 <div className="flex items-center justify-between bg-primary/50 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-text-secondary" />
@@ -176,12 +176,12 @@ function Loginpage() {
                     title="Copy password"
                   >
                     <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+                  </button> */}
+                {/* </div> */}
+              {/* </div> */}
             </div>
 
-            <div className="mt-8">
+            {/* <div className="mt-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-primary"></div>
@@ -193,7 +193,7 @@ function Loginpage() {
                   </span>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
