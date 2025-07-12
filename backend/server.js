@@ -12,8 +12,15 @@ const PORT = process.env.PORT || 5000;
 
 // Essential middleware - ADD THESE IF MISSING
 app.use(cors({
+<<<<<<< HEAD
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
+=======
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+>>>>>>> 4356addb5ab1ebf6f7d7048cbf1009e20f1c24e9
 }));
 
 // CRITICAL: JSON body parser middleware

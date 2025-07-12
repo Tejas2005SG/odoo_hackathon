@@ -1,230 +1,176 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/auth.model.js';
-import { generateTokenAndCookie } from '../utils/auth.utils.js';
-import twilio from 'twilio';
-import { redis } from '../lib/redis.js';
 
-// Twilio setup
-const accountSid = process.env.ACCOUNT_SID;
-const authToken = process.env.AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
-
-// Generate OTP
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
-
-// Send OTP via Twilio
-const sendOTP = async (phoneNumber, otp) => {
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-  if (!fromNumber) {
-    console.error('TWILIO_PHONE_NUMBER is not defined in environment variables');
-    throw new Error('Server configuration error: Missing Twilio phone number');
-  }
-
+const signup = async (req, res) => {
   try {
-    console.log(`Sending OTP to ${phoneNumber} from ${fromNumber}`);
-    const message = await client.messages.create({
-      body: `Your OTP is: ${otp}`,
-      from: fromNumber,
-      to: phoneNumber,
-    });
-    console.log(`OTP ${otp} sent to ${phoneNumber}, SID: ${message.sid}`);
-  } catch (error) {
-    console.error('Failed to send OTP via Twilio:', {
-      message: error.message,
-      code: error.code,
-      moreInfo: error.moreInfo,
-    });
-    throw new Error(`Failed to send OTP: ${error.message} (Code: ${error.code})`);
-  }
-};
+    const { firstName, lastName, username, email, password, confirmPassword } = req.body;
 
-// Store OTP in Redis
-const storeOTP = async (phoneNumber, otp) => {
-  try {
-    await redis.set(`otp:${phoneNumber}`, otp, { ex: 300 }); // ⬅️ Correct syntax for Upstash Redis
-    console.log(`OTP stored for ${phoneNumber}`);
-  } catch (error) {
-    console.error('Failed to store OTP in Redis:', error.message);
-    throw new Error('Temporary storage unavailable');
-  }
-};
-
-// Verify OTP
-const verifyOTP = async (phoneNumber, otp) => {
-  try {
-    const storedOTP = await redis.get(`otp:${phoneNumber}`);
-    console.log(`Verifying OTP for ${phoneNumber}: stored=${storedOTP}, provided=${otp}`);
-    return storedOTP === otp.toString(); // Ensure type consistency
-  } catch (error) {
-    console.error('Failed to verify OTP from Redis:', error.message);
-    throw new Error('OTP verification unavailable');
-  }
-};
-
-export const signup = async (req, res) => {
-  const { firstName, lastName, username, email, phoneNumber, password, confirmPassword } = req.body;
-
-  try {
-    if (!firstName || !lastName || !username || !email || !phoneNumber || !password || !confirmPassword) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
-    }
-
-    const userAlreadyExists = await User.findOne({ $or: [{ email }, { username }] });
-    if (userAlreadyExists) {
-      return res.status(400).json({
-        success: false,
-        message: userAlreadyExists.email === email ? 'Email already exists' : 'Username already exists',
-      });
-    }
-
+    // Validate passwords match
     if (password !== confirmPassword) {
-      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+      console.log('Password validation failed: passwords do not match');
+      return res.status(400).json({ message: 'Passwords do not match' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = generateOTP();
-
-    try {
-      await redis.set(
-        `signup:${phoneNumber}`,
-        JSON.stringify({
-          firstName,
-          lastName,
-          username,
-          email,
-          password: hashedPassword,
-          confirmPassword: hashedPassword,
-          phoneNumber,
-        }),
-        { ex: 300 } // ⬅️ Correct format for Upstash Redis TTL
-      );
-      console.log(`Signup data stored for ${phoneNumber}`);
-    } catch (redisError) {
-      console.error('Redis set error in signup:', redisError.message);
-      return res.status(503).json({ success: false, message: 'Temporary storage unavailable, please try again later' });
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      console.log('User already exists:', email, username);
+      return res.status(400).json({ message: 'Email or username already exists' });
     }
 
-    await storeOTP(phoneNumber, otp);
-    await sendOTP(phoneNumber, otp);
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log('Password hashed successfully');
 
-    return res.status(200).json({
-      success: true,
-      message: 'OTP sent to your phone number',
-      phoneNumber,
+    // Create new user
+    const user = new User({
+      firstName,
+      lastName,
+      username,
+      email,
+      password: hashedPassword,
+      confirmPassword: hashedPassword,
     });
+
+    await user.save();
+    console.log('User saved:', user._id);
+
+    // Verify JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      return res.status(500).json({ message: 'Server configuration error: JWT_SECRET not set' });
+    }
+
+    // Generate JWT
+    try {
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '1d',
+      });
+      console.log('Token generated:', token);
+
+      // Set token in HTTP-only cookie
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Secure only in production (HTTPS)
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      });
+
+      res.status(201).json({
+        message: 'User created successfully',
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (jwtError) {
+      console.error('JWT generation error:', jwtError.message);
+      return res.status(500).json({ message: 'Error generating token', error: jwtError.message });
+    }
   } catch (error) {
     console.error('Signup error:', error.message);
-    return res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-export const verifyPhone = async (req, res) => {
-  const { phoneNumber, otp } = req.body;
-
+const login = async (req, res) => {
   try {
-    if (!phoneNumber || !otp) {
-      return res.status(400).json({ success: false, message: 'Phone number and OTP are required' });
-    }
+    const { email, password } = req.body;
 
-    const isValidOTP = await verifyOTP(phoneNumber, otp);
-    if (!isValidOTP) {
-      console.log(`OTP verification failed for ${phoneNumber}: Invalid or expired OTP`);
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-    }
-
-    let userDetailsStr;
-    try {
-      userDetailsStr = await redis.get(`signup:${phoneNumber}`);
-      console.log(`Retrieved signup data for ${phoneNumber}: ${userDetailsStr}`);
-    } catch (redisError) {
-      console.error('Redis get error in verifyPhone:', redisError.message);
-      return res.status(503).json({ success: false, message: 'Temporary storage unavailable, please try again' });
-    }
-
-    if (!userDetailsStr) {
-      console.log(`No signup data found for ${phoneNumber}`);
-      return res.status(400).json({ success: false, message: 'Registration session expired. Please sign up again' });
-    }
-
-    const userDetails = JSON.parse(userDetailsStr);
-    const user = new User({
-      ...userDetails,
-      otp: parseInt(otp),
-    });
-
-    await user.save();
-    generateTokenAndCookie(res, user._id);
-
-    try {
-      await redis.del(`signup:${phoneNumber}`);
-      await redis.del(`otp:${phoneNumber}`);
-      console.log(`Cleaned up Redis data for ${phoneNumber}`);
-    } catch (redisError) {
-      console.error('Redis cleanup error:', redisError.message);
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: { ...user._doc, password: undefined },
-    });
-  } catch (error) {
-    console.error('Verify phone error:', error.message);
-    return res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
+    // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid Credentials' });
+      console.log('User not found:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ success: false, message: 'Invalid Credentials' });
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log('Password mismatch for user:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    generateTokenAndCookie(res, user._id);
-    user.lastLogin = new Date();
+    // Update last login
+    user.lastLogin = Date.now();
     await user.save();
+    console.log('User last login updated:', user._id);
 
-    return res.status(200).json({
-      success: true,
-      message: 'Logged in Successfully',
-      user: { ...user._doc, password: undefined },
-    });
+    // Verify JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      return res.status(500).json({ message: 'Server configuration error: JWT_SECRET not set' });
+    }
+
+    // Generate JWT
+    try {
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '1d',
+      });
+      console.log('Token generated:', token);
+
+      // Set token in HTTP-only cookie
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Secure only in production (HTTPS)
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      });
+
+      res.status(200).json({
+        message: 'Login successful',
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (jwtError) {
+      console.error('JWT generation error:', jwtError.message);
+      return res.status(500).json({ message: 'Error generating token', error: jwtError.message });
+    }
   } catch (error) {
     console.error('Login error:', error.message);
-    return res.status(400).json({ success: false, message: `Login Failed: ${error.message}` });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-export const logout = async (req, res) => {
+const logout = (req, res) => {
   try {
-    res.clearCookie('token');
-    return res.status(200).json({ success: true, message: 'Logged out successfully' });
+    console.log('Logout requested');
+    // Clear the JWT cookie
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+    res.status(200).json({ message: 'Logout successful' });
   } catch (error) {
     console.error('Logout error:', error.message);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-export const getProfile = async (req, res) => {
+const getProfile = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    console.log('Fetching profile for user:', req.user?._id);
+    const user = await User.findById(req.user._id).select('-password -confirmPassword');
+    if (!user) {
+      console.log('User not found for profile:', req.user?._id);
+      return res.status(404).json({ message: 'User not found' });
     }
-    return res.status(200).json({
-      success: true,
-      user: { ...req.user._doc, password: undefined },
-    });
+    res.status(200).json(user);
   } catch (error) {
     console.error('Get profile error:', error.message);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export { signup, login, logout, getProfile };
