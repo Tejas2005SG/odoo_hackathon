@@ -26,7 +26,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/ask-question/',askRoutes)
+app.use('/api/ask-question',askRoutes)
 
 // Start server
 app.listen(PORT, () => {
