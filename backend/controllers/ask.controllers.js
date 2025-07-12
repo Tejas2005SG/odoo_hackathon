@@ -89,27 +89,27 @@ const extractMentions = (content) => {
   return mentions;
 };
 
-export const getAllQuestions = async (req, res) => {
-  try {
-    const { sort, unanswered } = req.query;
-    let query = Question.find().populate('user', 'username firstName lastName').lean();
-    if (unanswered === 'true') {
-      query = query.where('status').equals('pending');
-    }
-    if (sort === 'createdAt') {
-      query = query.sort({ createdAt: -1 });
-    } else if (sort === 'views') {
-      query = query.sort({ views: -1 });
-    } else {
-      query = query.sort({ createdAt: -1 });
-    }
-    const questions = await query;
-    res.status(200).json(questions);
-  } catch (error) {
-    console.error('Error fetching questions:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+// export const getAllQuestions = async (req, res) => {
+//   try {
+//     const { sort, unanswered } = req.query;
+//     let query = Question.find().populate('user', 'username firstName lastName').lean();
+//     if (unanswered === 'true') {
+//       query = query.where('status').equals('pending');
+//     }
+//     if (sort === 'createdAt') {
+//       query = query.sort({ createdAt: -1 });
+//     } else if (sort === 'views') {
+//       query = query.sort({ views: -1 });
+//     } else {
+//       query = query.sort({ createdAt: -1 });
+//     }
+//     const questions = await query;
+//     res.status(200).json(questions);
+//   } catch (error) {
+//     console.error('Error fetching questions:', error);
+//     res.status(500).json({ message: 'Server error', error: error.message });
+//   }
+// };
 
 export const getQuestion = async (req, res) => {
   try {
