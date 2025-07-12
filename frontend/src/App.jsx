@@ -2,24 +2,22 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-<<<<<<< HEAD
 import { Route, Routes } from "react-router-dom"
 import AskQuestion from "./pages/AskQuestion"
 
-function App() {
-  return (
-    <>
-      <Routes>
-        <Route path="/" element={<div>Home</div>} />
-        <Route path="/ask-question" element={<div><AskQuestion/></div>} />
-      </Routes>
-    </>
-  )
-}
+// function App() {
+//   return (
+//     <>
+//       <Routes>
+//         <Route path="/" element={<div>Home</div>} />
+//         <Route path="/ask-question" element={<div><AskQuestion/></div>} />
+//       </Routes>
+//     </>
+//   )
+// }
 
-export default App
+// export default App
 
-=======
 import { useAuthStore } from './Store/auth.store.js';
 
 import Navbar from './components/Navbar.jsx';
@@ -55,6 +53,8 @@ function App() {
         >
           <Route index element={<DashboardHome />} />
         </Route>
+         <Route path="/" element={<div>Home</div>} />
+        <Route path="/ask-question" element={<div><AskQuestion/></div>} />
       </Routes>
       {/* <Toaster /> */}
     </div>
@@ -62,4 +62,3 @@ function App() {
 }
 
 export default App;
->>>>>>> 4356addb5ab1ebf6f7d7048cbf1009e20f1c24e9
