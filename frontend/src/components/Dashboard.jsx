@@ -14,7 +14,7 @@ function Dashboard() {
   return (
     <div>
       {/* You can use the userId here if needed */}
-      {userId && <p>Welcome, User ID: {userId}</p>}
+      {/* {userId && <p>{</p>} */}
       <Outlet />
     </div>
   )

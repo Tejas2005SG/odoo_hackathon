@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../Store/auth.store.js';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, LogIn } from 'lucide-react';
-import signupImage from './meetImage.avif'; // Adjust path as needed
+import signupImage from './S1.png'; // Adjust path as needed
 
 function Signuppage() {
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ function Signuppage() {
     try {
       const response = await signup(formData);
       console.log('User signed up:', response.user); // Log the user data
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.';
       if (error.response?.status === 400 && errorMessage.includes('Email or username already exists')) {
@@ -77,12 +77,12 @@ function Signuppage() {
           <div className="absolute inset-0 bg-primary opacity-60"></div>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center p-8">
-              <h1 className="text-4xl font-bold text-white font-heading">
+              {/* <h1 className="text-4xl font-bold text-white font-heading">
                 Join the Forefront of Discovery
-              </h1>
-              <p className="text-text-primary mt-4 text-lg font-body">
+              </h1> */}
+              {/* <p className="text-text-primary mt-4 text-lg font-body">
                 Accelerate your research with our secure, AI-driven platform. Unlock new possibilities in drug discovery and genetic analysis.
-              </p>
+              </p> */}
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ function Signuppage() {
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-text-primary font-heading mb-2">
-                Researcher Registration
+                Stack It 
               </h2>
               <p className="text-text-secondary font-body">Create your account to begin</p>
             </div>

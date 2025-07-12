@@ -173,4 +173,47 @@ const getProfile = async (req, res) => {
   }
 };
 
-export { signup, login, logout, getProfile };
+const getUsers = async (req, res) => {
+  try {
+    console.log('Fetching all users');
+    console.log('Request user:', req.user);
+    
+    // Ensure JSON response for all cases
+    res.setHeader('Content-Type', 'application/json');
+    
+    const users = await User.find().select('firstName lastName username email createdAt');
+    
+    if (!users || users.length === 0) {
+      console.log('No users found');
+      return res.status(404).json({ 
+        success: false,
+        message: 'No users found',
+        users: []
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      users: users.map(user => ({
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('Get users error:', error.message);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message,
+      users: []
+    });
+  }
+};
+
+
+export { signup, login, logout, getProfile ,getUsers};
