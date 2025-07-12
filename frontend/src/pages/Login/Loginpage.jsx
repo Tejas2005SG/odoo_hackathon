@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../Store/auth.store.js';
 import { Mail, Lock, Copy, UserPlus, Shield } from 'lucide-react';
-import loginImage from './stackit.jpg'; // Adjust path as needed
+import loginImage from './S1.png'; // Adjust path as needed
 
 function Loginpage() {
   const [formData, setFormData] = useState({

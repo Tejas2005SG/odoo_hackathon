@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../Store/auth.store.js';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, LogIn } from 'lucide-react';
-import signupImage from './stackit.jpg'; // Adjust path as needed
+import signupImage from './S1.png'; // Adjust path as needed
 
 function Signuppage() {
   const [formData, setFormData] = useState({
