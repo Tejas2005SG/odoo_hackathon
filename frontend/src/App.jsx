@@ -1,11 +1,17 @@
 
+import { Route, Routes } from "react-router-dom"
+import AskQuestion from "./pages/AskQuestion"
 
 function App() {
   return (
     <>
-      <h1 className="bg-red-500 text-2xl">Odoo Hackathon</h1>
+      <Routes>
+        <Route path="/" element={<div>Home</div>} />
+        <Route path="/ask-question" element={<div><AskQuestion/></div>} />
+      </Routes>
     </>
   )
 }
 
 export default App
+

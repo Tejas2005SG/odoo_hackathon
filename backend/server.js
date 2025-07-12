@@ -4,7 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectionDb } from './lib/db.js';
 import authRoutes from './routes/auth.routes.js';
-
+import askRoutes from './routes/ask.routes.js';
 dotenv.config();
 
 const app = express();
@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 // Essential middleware - ADD THESE IF MISSING
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
 }));
 
@@ -23,6 +23,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/ask-question/',askRoutes)
 
 // Start server
 app.listen(PORT, () => {
