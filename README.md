@@ -1,4 +1,6 @@
-StackIt – A Minimal Q&A Forum Platform 
+## BY Mistakely added the another problem statement in portal and now we are doing StackIt – A Minimal Q&A Forum Platform this problem statement this problem
+
+## StackIt – A Minimal Q&A Forum Platform 
 
 Overview 
 StackIt is a minimal question-and-answer platform that supports collaborative 
