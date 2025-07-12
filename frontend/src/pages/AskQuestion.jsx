@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useAuthStore } from "../Store/auth.store.js"; // Adjust path as needed
 import {
   Send,
   X,
@@ -30,6 +31,10 @@ const AskQuestion = () => {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
   const editorRef = useRef(null);
+
+  // Get user from auth store
+  const { user } = useAuthStore();
+  const userId = user?.id;
 
   const commonEmojis = [
     "😀", "😊", "😂", "🤔", "😍", "🙄", "😢", "😮", "👍", "👎",
@@ -113,62 +118,71 @@ const AskQuestion = () => {
         return;
       }
 
-      const formData = new FormData();
-      formData.append('image', file);
-
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No authentication token found. Please log in.');
-        }
-
-        const response = await fetch('http://localhost:5000/api/ask-question/upload-image', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to upload image');
-        }
-
-        editorRef.current?.focus();
-        const img = document.createElement('img');
-        img.src = data.secure_url;
-        img.alt = file.name;
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
-        img.style.display = 'block';
-        img.style.margin = '10px 0';
-        img.style.borderRadius = '8px';
-        img.style.border = '1px solid #e5e7eb';
-
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const br1 = document.createElement('br');
-          range.insertNode(br1);
-          range.insertNode(img);
-          const br2 = document.createElement('br');
-          range.insertNode(br2);
-          range.setStartAfter(br2);
-          range.setEndAfter(br2);
-          selection.removeAllRanges();
-          selection.addRange(range);
-        } else {
-          editorRef.current?.appendChild(document.createElement('br'));
-          editorRef.current?.appendChild(img);
-          editorRef.current?.appendChild(document.createElement('br'));
-        }
-
-        setDescription(editorRef.current?.innerHTML || "");
-      } catch (error) {
-        console.log('Error uploading image: ', error);
-        alert('Failed to upload image: ' + error.message);
+      // Check if user is authenticated
+      if (!user) {
+        alert('Please log in to upload images');
+        return;
       }
+
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result;
+
+        try {
+          const response = await fetch('http://localhost:5000/api/ask-question/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies for authentication
+            body: JSON.stringify({ image: base64Image })
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to upload image');
+          }
+
+          editorRef.current?.focus();
+          const img = document.createElement('img');
+          img.src = data.secure_url;
+          img.alt = file.name;
+          img.style.maxWidth = '100%';
+          img.style.height = 'auto';
+          img.style.display = 'block';
+          img.style.margin = '10px 0';
+          img.style.borderRadius = '8px';
+          img.style.border = '1px solid #e5e7eb';
+
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const br1 = document.createElement('br');
+            range.insertNode(br1);
+            range.insertNode(img);
+            const br2 = document.createElement('br');
+            range.insertNode(br2);
+            range.setStartAfter(br2);
+            range.setEndAfter(br2);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } else {
+            editorRef.current?.appendChild(document.createElement('br'));
+            editorRef.current?.appendChild(img);
+            editorRef.current?.appendChild(document.createElement('br'));
+          }
+
+          setDescription(editorRef.current?.innerHTML || "");
+        } catch (error) {
+          console.log('Error uploading image: ', error);
+          alert('Failed to upload image: ' + error.message);
+        }
+      };
+      reader.onerror = () => {
+        alert('Error reading image file');
+      };
+      reader.readAsDataURL(file);
     }
     e.target.value = '';
   };
@@ -179,26 +193,29 @@ const AskQuestion = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!user) {
+      alert('Please log in to submit a question');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const payload = {
       title,
       description,
-      tags: JSON.stringify(tags)
+      tags: JSON.stringify(tags),
+      userId: userId // Include user ID in payload
     };
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found. Please log in.');
-      }
-
       const response = await fetch('http://localhost:5000/api/ask-question/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(payload)
       });
 
@@ -222,6 +239,16 @@ const AskQuestion = () => {
     }
   };
 
+  // Show login message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <h1 className="text-3xl font-bold text-slate-800 mb-4">Ask a Question</h1>
+        <p className="text-slate-600">Please log in to ask a question.</p>
+      </div>
+    );
+  }
+
   const ToolbarButton = ({ onClick, children, title, active = false }) => (
     <button
       type="button"
@@ -237,7 +264,10 @@ const AskQuestion = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-slate-800 mb-8">Ask a Question</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-800">Ask a Question</h1>
+        <p className="text-slate-600">Welcome, {user.firstName}!</p>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-3">

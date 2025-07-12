@@ -2,8 +2,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import { Route, Routes } from "react-router-dom"
-import AskQuestion from "./pages/AskQuestion"
+// import { Route, Routes } from "react-router-dom"
+import AskQuestion from "./pages/AskQuestion.jsx";
 
 // function App() {
 //   return (
@@ -51,10 +51,11 @@ function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="ask-question" element={<div><AskQuestion/></div>} />
           <Route index element={<DashboardHome />} />
         </Route>
-         <Route path="/" element={<div>Home</div>} />
-        <Route path="/ask-question" element={<div><AskQuestion/></div>} />
+         
+        
       </Routes>
       {/* <Toaster /> */}
     </div>

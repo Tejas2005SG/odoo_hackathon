@@ -13,6 +13,36 @@ const extractCloudinaryPublicIds = (description) => {
   return publicIds;
 };
 
+// Updated uploadImage function
+export const uploadImage = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated' });
+    }
+
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ message: 'No image provided' });
+    }
+
+    // Validate base64 string format
+    if (!image.startsWith('data:image/')) {
+      return res.status(400).json({ message: 'Invalid image format. Expected base64-encoded image' });
+    }
+
+    // Upload to Cloudinary
+    const cloudinaryResponse = await cloudinary.uploader.upload(image, {
+      folder: 'questions',
+      allowed_formats: ['jpg', 'png', 'jpeg'],
+    });
+
+    res.status(200).json({ secure_url: cloudinaryResponse.secure_url });
+  } catch (error) {
+    console.log('Error uploading image: ', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 export const askQuestion = async (req, res) => {
   try {
     const { title, description, tags } = req.body;
@@ -122,25 +152,3 @@ export const deleteQuestion = async (req, res) => {
   }
 };
 
-export const uploadImage = async (req, res) => {
-  try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Unauthorized: User not authenticated' });
-    }
-
-    const { image } = req.body;
-    if (!image) {
-      return res.status(400).json({ message: 'No image provided' });
-    }
-
-    const cloudinaryResponse = await cloudinary.uploader.upload(image, {
-      folder: 'questions',
-      allowed_formats: ['jpg', 'png', 'jpeg']
-    });
-
-    res.status(200).json({ secure_url: cloudinaryResponse.secure_url });
-  } catch (error) {
-    console.log('Error uploading image: ', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
