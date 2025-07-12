@@ -51,11 +51,11 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="ask-question" element={<div><AskQuestion/></div>} />
+          
           <Route index element={<DashboardHome />} />
         </Route>
-         
-        
+         <Route path="/ask-question" element={<div><AskQuestion/></div>} />
+        <Route path="/answer-qs/:id" element={<AnswerQuestion />} /> {/* New route for answering questions */}
       </Routes>
       {/* <Toaster /> */}
     </div>

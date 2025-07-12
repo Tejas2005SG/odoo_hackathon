@@ -263,7 +263,7 @@ const AskQuestion = () => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6 ">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">Ask a Question</h1>
         <p className="text-slate-600">Welcome, {user.firstName}!</p>
